@@ -10,23 +10,23 @@ class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
 
-        val id = intent.getLongExtra("id", -1)
-
+        val id = intent.getLongExtra("id", -1L)
         if (id < 0) return
 
         val list = ReminderStore.load(context)
-        val r = list.firstOrNull { it.id == id } ?: return
+        val reminder = list.firstOrNull { it.id == id } ?: return
 
-        val nm = context.getSystemService(NotificationManager::class.java)
+        val notificationManager =
+            context.getSystemService(NotificationManager::class.java)
 
         val channelId = "reminder_alarm"
 
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             val sound =
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
 
-            val ch = NotificationChannel(
+            val channel = NotificationChannel(
                 channelId,
                 "Alarmas de recordatorios",
                 NotificationManager.IMPORTANCE_HIGH
@@ -45,80 +45,96 @@ class AlarmReceiver : BroadcastReceiver() {
                 )
 
                 enableVibration(true)
-
                 vibrationPattern =
                     longArrayOf(0, 500, 300, 500, 300, 800)
             }
 
-            nm.createNotificationChannel(ch)
+            notificationManager.createNotificationChannel(channel)
         }
 
-        val fullScreenIntent = Intent(
+        val alarmIntent = Intent(
             context,
             AlarmActivity::class.java
         ).apply {
             putExtra("id", id)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags =
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
-        val fullScreenPendingIntent =
+        val alarmPendingIntent =
             PendingIntent.getActivity(
                 context,
                 id.toInt() + 200000,
-                fullScreenIntent,
+                alarmIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_IMMUTABLE
             )
 
-        val openIntent = Intent(
+        val mainIntent = Intent(
             context,
             MainActivity::class.java
         )
 
-        val openPendingIntent =
+        val mainPendingIntent =
             PendingIntent.getActivity(
                 context,
                 id.toInt() + 100000,
-                openIntent,
+                mainIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or
-                        PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_IMMUTABLE
             )
 
-        val n = Notification.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("⏰ ${r.title}")
-            .setContentText(
-                if (r.notes.isBlank())
-                    "Es hora de tu recordatorio"
-                else
-                    r.notes
-            )
-            .setCategory(Notification.CATEGORY_ALARM)
-            .setPriority(Notification.PRIORITY_MAX)
-            .setAutoCancel(true)
-            .setContentIntent(openPendingIntent)
-            .setFullScreenIntent(fullScreenPendingIntent, true)
-            .setVibrate(longArrayOf(0, 500, 300, 500, 300, 800))
-            .build()
+        val builder =
+            Notification.Builder(context, channelId)
+                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                .setContentTitle("⏰ ${reminder.title}")
+                .setContentText(
+                    if (reminder.notes.isBlank())
+                        "Es hora de tu recordatorio"
+                    else
+                        reminder.notes
+                )
+                .setCategory(Notification.CATEGORY_ALARM)
+                .setPriority(Notification.PRIORITY_MAX)
+                .setAutoCancel(true)
+                .setContentIntent(mainPendingIntent)
+                .setVibrate(
+                    longArrayOf(0, 500, 300, 500, 300, 800)
+                )
 
-        nm.notify(id.toInt(), n)
+        if (Build.VERSION.SDK_INT < 34) {
+            builder.setFullScreenIntent(alarmPendingIntent, true)
+        } else {
+            val canUseFullScreen =
+                notificationManager.canUseFullScreenIntent()
 
-        if (r.repeat != "none") {
+            if (canUseFullScreen) {
+                builder.setFullScreenIntent(
+                    alarmPendingIntent,
+                    true
+                )
+            }
+        }
 
-            r.timeMillis =
+        notificationManager.notify(id.toInt(), builder.build())
+
+        if (reminder.repeat != "none") {
+
+            reminder.timeMillis =
                 AlarmScheduler.nextTrigger(
-                    r.copy(timeMillis = r.timeMillis)
+                    reminder.copy(
+                        timeMillis = reminder.timeMillis
+                    )
                 )
 
             ReminderStore.save(context, list)
-
-            AlarmScheduler.schedule(context, r)
+            AlarmScheduler.schedule(context, reminder)
 
         } else {
 
-            r.enabled = false
-
+            reminder.enabled = false
             ReminderStore.save(context, list)
         }
     }
