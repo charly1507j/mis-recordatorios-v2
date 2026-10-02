@@ -1,21 +1,13 @@
-# Mis Recordatorios V2 — Android
+# Mis Recordatorios V2.1
 
-Versión nativa para Android enfocada en alarmas reales del sistema.
+Aplicación Android de recordatorios con alarmas exactas.
 
-## Funciones
-- Crear, editar y eliminar recordatorios.
-- Fecha y hora.
-- Alarmas exactas mediante AlarmManager.
-- Sonido y vibración mediante canal de alarma.
-- Repetición diaria, semanal y mensual.
-- Reprogramación después de reiniciar el teléfono.
-- Datos guardados localmente en el teléfono.
-- Sin servidor y sin cuenta obligatoria.
+## Diseño V2.1
+- Interfaz moderna con encabezado visual, tarjetas redondeadas y mejor jerarquía.
+- Indicador de recordatorios activos y cantidad de recordatorios de hoy.
+- Botón principal para crear recordatorios.
+- Tarjetas con fecha, repetición, notas y acciones de editar/eliminar.
+- Mantiene las alarmas exactas de Android, incluso con la app cerrada, según los permisos del sistema.
 
-## Requisitos
-Android Studio reciente + Android SDK 36.
-
-La app solicita `POST_NOTIFICATIONS` en Android 13+ y acceso especial de "Alarmas y recordatorios" en Android 12+ para poder entregar alarmas exactas.
-
-## Importante
-Android puede aplicar restricciones propias del fabricante. Para máxima confiabilidad, permite notificaciones y, si el teléfono ofrece la opción, permite a la app ejecutarse sin restricciones de batería.
+## Compilación
+GitHub Actions genera el APK de depuración en cada push a `main`.
