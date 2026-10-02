@@ -9,6 +9,7 @@ import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
+import android.view.Window
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -22,17 +23,37 @@ class AlarmActivity : Activity() {
 
         reminderId = intent.getLongExtra("id", -1L)
 
+        /*
+         * IMPORTANTE:
+         * Estas opciones permiten que la actividad aparezca
+         * aunque el teléfono esté bloqueado y que la pantalla
+         * se encienda cuando llegue la alarma.
+         */
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+
             setShowWhenLocked(true)
             setTurnScreenOn(true)
+
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            )
+
         } else {
+
             @Suppress("DEPRECATION")
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
             )
         }
+
+        // Mantener la pantalla encendida mientras se muestra la alarma
+        @Suppress("DEPRECATION")
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        )
 
         val list = ReminderStore.load(this)
         val reminder = list.firstOrNull { it.id == reminderId }
@@ -41,6 +62,10 @@ class AlarmActivity : Activity() {
             finish()
             return
         }
+
+        // =========================
+        // PANTALLA DE ALARMA
+        // =========================
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -77,7 +102,12 @@ class AlarmActivity : Activity() {
         root.addView(label)
         root.addView(title)
 
+        // =========================
+        // NOTAS
+        // =========================
+
         if (reminder.notes.isNotBlank()) {
+
             val notes = TextView(this).apply {
                 text = reminder.notes
                 textSize = 17f
@@ -89,13 +119,20 @@ class AlarmActivity : Activity() {
             root.addView(notes)
         }
 
+        // =========================
+        // BOTÓN YA LO HICE
+        // =========================
+
         val button = TextView(this).apply {
+
             text = "✓  YA LO HICE"
             textSize = 19f
             gravity = Gravity.CENTER
             setTextColor(Color.rgb(79, 70, 229))
             setTypeface(null, Typeface.BOLD)
+
             setPadding(30, 22, 30, 22)
+
             setBackgroundColor(Color.WHITE)
 
             setOnClickListener {
@@ -107,6 +144,10 @@ class AlarmActivity : Activity() {
 
         setContentView(root)
     }
+
+    // =========================
+    // CONFIRMACIÓN
+    // =========================
 
     private fun showConfirmation() {
 
@@ -121,26 +162,40 @@ class AlarmActivity : Activity() {
             .show()
     }
 
+    // =========================
+    // DETENER ALARMA
+    // =========================
+
     private fun stopAlarm() {
 
         val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            getSystemService(Context.NOTIFICATION_SERVICE)
+                    as NotificationManager
 
         notificationManager.cancel(reminderId.toInt())
 
         val list = ReminderStore.load(this)
-        val reminder = list.firstOrNull { it.id == reminderId }
+
+        val reminder =
+            list.firstOrNull { it.id == reminderId }
 
         if (reminder != null && reminder.repeat == "none") {
+
             reminder.enabled = false
+
             ReminderStore.save(this, list)
         }
 
         finish()
     }
 
+    // =========================
+    // BOTÓN ATRÁS
+    // =========================
+
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
+
         showConfirmation()
     }
 }
