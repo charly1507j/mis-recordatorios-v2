@@ -1,6 +1,7 @@
 package com.misrecordatorios.v2
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.NotificationManager
 import android.content.Context
 import android.graphics.Color
@@ -84,6 +85,7 @@ class AlarmActivity : Activity() {
                 setTextColor(Color.WHITE)
                 setPadding(10, 0, 10, 25)
             }
+
             root.addView(notes)
         }
 
@@ -97,7 +99,7 @@ class AlarmActivity : Activity() {
             setBackgroundColor(Color.WHITE)
 
             setOnClickListener {
-                stopAlarm()
+                showConfirmation()
             }
         }
 
@@ -106,7 +108,21 @@ class AlarmActivity : Activity() {
         setContentView(root)
     }
 
+    private fun showConfirmation() {
+
+        AlertDialog.Builder(this)
+            .setTitle("Confirmar")
+            .setMessage("¿Estás seguro que ya lo hiciste?")
+            .setNegativeButton("CANCELAR", null)
+            .setPositiveButton("SÍ, YA LO HICE") { _, _ ->
+                stopAlarm()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
     private fun stopAlarm() {
+
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -125,6 +141,6 @@ class AlarmActivity : Activity() {
 
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
-        stopAlarm()
+        showConfirmation()
     }
 }
