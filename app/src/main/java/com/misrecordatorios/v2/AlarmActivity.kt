@@ -3,30 +3,35 @@ package com.misrecordatorios.v2
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
-import android.os.Bundle
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
+import android.os.Bundle
 import android.view.Gravity
+import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 
 class AlarmActivity : Activity() {
 
-    private var reminderId: Long = -1L
+    private var reminderId = -1L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         reminderId = intent.getLongExtra("id", -1L)
 
-        if (Build.VERSION.SDK_INT >= 27) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            )
         }
-
-        window.statusBarColor = Color.rgb(30, 27, 75)
-        window.navigationBarColor = Color.rgb(30, 27, 75)
 
         val list = ReminderStore.load(this)
         val reminder = list.firstOrNull { it.id == reminderId }
@@ -67,12 +72,19 @@ class AlarmActivity : Activity() {
             setPadding(10, 25, 10, 15)
         }
 
-        val notes = TextView(this).apply {
-            text = reminder.notes
-            textSize = 17f
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            setPadding(10, 0, 10, 25)
+        root.addView(icon)
+        root.addView(label)
+        root.addView(title)
+
+        if (reminder.notes.isNotBlank()) {
+            val notes = TextView(this).apply {
+                text = reminder.notes
+                textSize = 17f
+                gravity = Gravity.CENTER
+                setTextColor(Color.WHITE)
+                setPadding(10, 0, 10, 25)
+            }
+            root.addView(notes)
         }
 
         val button = TextView(this).apply {
@@ -87,14 +99,6 @@ class AlarmActivity : Activity() {
             setOnClickListener {
                 stopAlarm()
             }
-        }
-
-        root.addView(icon)
-        root.addView(label)
-        root.addView(title)
-
-        if (reminder.notes.isNotBlank()) {
-            root.addView(notes)
         }
 
         root.addView(button)
@@ -119,6 +123,7 @@ class AlarmActivity : Activity() {
         finish()
     }
 
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
         stopAlarm()
     }
