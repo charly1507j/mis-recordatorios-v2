@@ -63,7 +63,7 @@ class MainActivity : Activity() {
     private fun build() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(background)
+            setBackgroundColor(this@MainActivity.background)
         }
 
         val header = LinearLayout(this).apply {
